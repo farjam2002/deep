@@ -1,0 +1,102 @@
+﻿{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">افراد ناشناس</h4>
+</div>
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="get" action="{{ url_for('main.unknowns') }}" class="row g-2">
+            <div class="col-md-3">
+                <input type="text" name="q" class="form-control form-control-sm" value="{{ q }}" placeholder="جستجو در کد">
+            </div>
+            <div class="col-md-3">
+                <select name="status" class="form-select form-select-sm">
+                    <option value="all" {% if status == 'all' %}selected{% endif %}>همه</option>
+                    <option value="active" {% if status == 'active' %}selected{% endif %}>فعال</option>
+                    <option value="assigned" {% if status == 'assigned' %}selected{% endif %}>اختصاصیافته</option>
+                    <option value="merged" {% if status == 'merged' %}selected{% endif %}>ادغامشده</option>
+                </select>
+            </div>
+            <div class="col-md-2"><button class="btn btn-sm btn-primary w-100">جستجو</button></div>
+        </form>
+    </div>
+</div>
+<form method="post" action="{{ url_for('main.unknown_merge') }}" onsubmit="return confirm('ادغام شود');">
+    <div class="card mb-3">
+        <div class="card-body py-2">
+            <div class="row g-2 align-items-center">
+                <div class="col-md-4">
+                    <select name="target_id" class="form-select form-select-sm" required>
+                        <option value="">انتخاب ناشناس هدف</option>
+                        {% for u in all_unknowns %}<option value="{{ u.id }}">{{ u.code }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2"><button class="btn btn-sm btn-warning w-100">ادغام انتخابشدهها</button></div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead><tr><th><input type="checkbox" id="selectAll"></th><th>تصویر</th><th>کد</th><th>اولین مشاهده</th><th>آخرین مشاهده</th><th>وضعیت</th><th>کارمند اختصاصیافته</th><th>اختصاص</th></tr></thead>
+                    <tbody>
+                        {% for unknown in unknowns %}
+                            <tr>
+                                <td><input type="checkbox" name="selected_ids" value="{{ unknown.id }}" class="unknown-checkbox"></td>
+                                <td>
+                                    {% if unknown.sample_image_path %}
+                                        <img src="{{ url_for('main.unknown_image', unknown_id=unknown.id) }}" class="small-img" style="width:60px; height:60px; object-fit:cover; cursor:pointer;" onclick="showUnknownImage('{{ url_for('main.unknown_image', unknown_id=unknown.id) }}')">
+                                    {% else %}-{% endif %}
+                                </td>
+                                <td>{{ unknown.code }}</td>
+                                <td>{{ format_datetime(unknown.first_seen_at) }}</td>
+                                <td>{{ format_datetime(unknown.last_seen_at) }}</td>
+                                <td>
+                                    {% if unknown.merged_into_id %}<span class="badge bg-secondary">ادغامشده</span>
+                                    {% elif unknown.active %}<span class="badge bg-success">فعال</span>
+                                    {% else %}<span class="badge bg-secondary">غیرفعال</span>{% endif %}
+                                </td>
+                                <td>
+                                    {% if unknown.assigned_employee %}{{ unknown.assigned_employee.personnel_code }} - {{ unknown.assigned_employee.full_name }}{% else %}-{% endif %}
+                                </td>
+                                <td>
+                                    <form method="post" action="{{ url_for('main.unknown_assign', unknown_id=unknown.id) }}" class="d-flex">
+                                        <select name="employee_id" class="form-select form-select-sm me-2">
+                                            {% for employee in employees %}<option value="{{ employee.id }}">{{ employee.personnel_code }}</option>{% endfor %}
+                                        </select>
+                                        <button class="btn btn-sm btn-primary">اختصاص</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="8" class="text-center text-muted">ناشناسی یافت نشد.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% include "_pagination.html" %}
+</form>
+<div class="modal fade" id="unknownModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">تصویر ناشناس</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body text-center"><img id="unknownModalImg" src="" style="max-width:100%;"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById("selectAll").addEventListener("change", function() {
+        document.querySelectorAll(".unknown-checkbox").forEach(cb => cb.checked = this.checked);
+    });
+    function showUnknownImage(url) {
+        document.getElementById("unknownModalImg").src = url;
+        new bootstrap.Modal(document.getElementById("unknownModal")).show();
+    }
+</script>
+{% endblock %}

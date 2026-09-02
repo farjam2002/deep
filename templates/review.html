@@ -1,0 +1,37 @@
+﻿{% extends "base.html" %}
+{% block content %}
+<h4 class="mb-3">بررسی دستی موارد کمدقت</h4>
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-sm table-hover mb-0">
+            <thead><tr><th>#</th><th>نوع</th><th>کد</th><th>نام</th><th>محدوده</th><th>شروع</th><th>آخرین مشاهده</th><th>اطمینان</th><th>عملیات</th></tr></thead>
+            <tbody>
+                {% for s in sessions %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ s.person_type }}</td>
+                        <td>{{ s.identity_code }}</td>
+                        <td>{{ s.identity_name }}</td>
+                        <td>{{ s.zone.name if s.zone else "-" }}</td>
+                        <td>{{ format_datetime(s.start_time) }}</td>
+                        <td>{{ format_datetime(s.last_seen_time) }}</td>
+                        <td>{% if s.avg_confidence is not none %}{{ "%.2f"|format(s.avg_confidence) }}{% else %}-{% endif %}</td>
+                        <td>
+                            <form method="post" action="{{ url_for('main.review_approve', session_id=s.id) }}" class="d-inline"><button class="btn btn-sm btn-success">تأیید</button></form>
+                            <form method="post" action="{{ url_for('main.review_reject', session_id=s.id) }}" class="d-inline"><button class="btn btn-sm btn-danger">رد</button></form>
+                            <form method="post" action="{{ url_for('main.review_correct', session_id=s.id) }}" class="d-inline">
+                                <select name="employee_id" class="form-select form-select-sm d-inline" style="width:180px;">
+                                    {% for e in employees %}<option value="{{ e.id }}">{{ e.personnel_code }}</option>{% endfor %}
+                                </select>
+                                <button class="btn btn-sm btn-primary">اصلاح</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="9" class="text-center text-muted">موردی برای بررسی وجود ندارد.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

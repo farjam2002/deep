@@ -1,0 +1,49 @@
+﻿{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">جزئیات کارمند: {{ employee.full_name }}</h4>
+    <a href="{{ url_for('main.employees') }}" class="btn btn-secondary">بازگشت</a>
+</div>
+<div class="card mb-4">
+    <div class="card-body">
+        <p><strong>کد پرسنلی:</strong> {{ employee.personnel_code }}</p>
+        <p><strong>وضعیت:</strong> {{ "فعال" if employee.active else "غیرفعال" }}</p>
+        <p><strong>تعداد چهرههای ثبتشده:</strong> {{ employee.face_count }}</p>
+        <form method="post" action="{{ url_for('main.employee_toggle', employee_id=employee.id) }}">
+            <button class="btn btn-sm btn-outline-warning">{{ "غیرفعال کردن" if employee.active else "فعال کردن" }}</button>
+        </form>
+    </div>
+</div>
+<div class="card mb-4">
+    <div class="card-header">آپلود عکس چهره</div>
+    <div class="card-body">
+        <form method="post" action="{{ url_for('main.employee_upload_faces', employee_id=employee.id) }}" enctype="multipart/form-data">
+            <div class="mb-3">
+                <input type="file" name="files" class="form-control" multiple accept="image/*" required>
+            </div>
+            <button class="btn btn-success">آپلود</button>
+        </form>
+    </div>
+</div>
+<div class="card">
+    <div class="card-header">چهرههای ثبتشده</div>
+    <div class="card-body">
+        <div class="row">
+            {% for face in faces %}
+                <div class="col-md-2 mb-3">
+                    <div class="card">
+                        <img src="{{ url_for('main.face_image', face_id=face.id) }}" class="card-img-top" style="height:120px; object-fit:cover;">
+                        <div class="card-body p-2 text-center">
+                            <form method="post" action="{{ url_for('main.face_delete', face_id=face.id) }}" onsubmit="return confirm('حذف شود');">
+                                <button class="btn btn-sm btn-danger">حذف</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <p>هنوز چهرهای ثبت نشده است.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

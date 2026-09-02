@@ -1,0 +1,47 @@
+﻿{
+  "app_name": "سامانه حضور و غیاب تشخیص چهره",
+  "secret_key": "CHANGE-SECRET-KEY",
+  "host": "0.0.0.0",
+  "port": 5000,
+  "debug": false,
+  "auto_start": false,
+  "websocket_interval_sec": 2,
+  "database_uri": "sqlite:///data/app.db",
+  "processing": {
+    "process_interval_sec": 2,
+    "process_width": 640,
+    "motion_enabled": false,
+    "motion_threshold": 20,
+    "motion_min_area": 300,
+    "face_min_size": 40,
+    "blur_threshold": 50,
+    "min_quality": 15,
+    "min_recognition_quality": 25,
+    "recognition_backend": "auto",
+    "onnx_model_path": "models/mobilefacenet.onnx",
+    "onnx_threshold": 0.40,
+    "onnx_input_mean": 127.5,
+    "onnx_input_std": 128.0,
+    "recognition_threshold": 80,
+    "review_confidence_threshold": 60,
+    "session_timeout_sec": 180,
+    "event_interval_sec": 10,
+    "snapshot_interval_sec": 0.3,
+    "reid_interval_sec": 15,
+    "train_interval_sec": 10,
+    "unknown_min_age_sec": 2,
+    "unknown_quality_min": 30,
+    "max_misses": 12
+  },
+  "camera": {
+    "reconnect_delay_sec": 5
+  },
+  "storage": {
+    "data_dir": "data",
+    "employees_dir": "data/employees",
+    "unknown_dir": "data/unknown",
+    "snapshots_dir": "data/snapshots",
+    "backups_dir": "backups",
+    "logs_dir": "logs"
+  }
+}

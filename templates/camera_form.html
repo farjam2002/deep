@@ -1,0 +1,103 @@
+﻿{% extends "base.html" %}
+{% block content %}
+<h4>{{ "ویرایش دوربین" if camera else "افزودن دوربین جدید" }}</h4>
+<div class="card">
+    <div class="card-body">
+        <form method="post" id="cameraForm">
+            <div class="mb-3">
+                <label class="form-label">نام دوربین</label>
+                <input type="text" name="name" class="form-control" value="{{ camera.name if camera else '' }}" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">آدرس RTSP</label>
+                <input type="text" name="rtsp_url" class="form-control" dir="ltr" value="{{ camera.rtsp_url if camera else '' }}" placeholder="rtsp://user:pass@ip:554/stream" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">محدوده</label>
+                <select name="zone_id" class="form-select">
+                    <option value="">بدون محدوده</option>
+                    {% for zone in zones %}
+                        <option value="{{ zone.id }}" {% if camera and camera.zone_id == zone.id %}selected{% endif %}>{{ zone.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3 form-check">
+                <input type="checkbox" name="enabled" class="form-check-input" id="enabled" {% if not camera or camera.enabled %}checked{% endif %}>
+                <label class="form-check-label" for="enabled">فعال</label>
+            </div>
+            <hr>
+            <h6>ماسک ناحیه فعال</h6>
+            <div class="mb-2">
+                <button type="button" class="btn btn-sm btn-outline-danger" id="undoPoint">حذف آخرین نقطه</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="clearPoints">پاک کردن همه</button>
+                <span class="badge bg-primary">تعداد نقاط: <span id="pointCount">0</span></span>
+            </div>
+            <div class="form-text mb-2">روی تصویر کلیک کنید تا ناحیه فعال مشخص شود.</div>
+            <div id="maskContainer" style="position:relative; display:inline-block; max-width:640px;">
+                <img id="maskImg" src="{{ url_for('main.camera_snapshot', camera_id=camera.id) if camera else '' }}" style="max-width:640px; display:none; width:100%;">
+                <canvas id="maskCanvas"></canvas>
+                <div id="maskEmpty" class="alert alert-secondary">تصویر برای رسم ماسک در دسترس نیست.</div>
+            </div>
+            <input type="hidden" name="active_mask" id="active_mask" value="{{ camera.active_mask if camera else '[]' }}">
+            <div class="mt-3">
+                <button class="btn btn-success">ذخیره</button>
+                <a href="{{ url_for('main.cameras') }}" class="btn btn-secondary">انصراف</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const img = document.getElementById("maskImg");
+    const canvas = document.getElementById("maskCanvas");
+    const maskEmpty = document.getElementById("maskEmpty");
+    const activeMaskInput = document.getElementById("active_mask");
+    const pointCount = document.getElementById("pointCount");
+    let points = [];
+    let pointsTouched = false;
+    try { points = JSON.parse(activeMaskInput.value || "[]"); if (!Array.isArray(points)) points = []; } catch(e) { points = []; }
+
+    function drawMask() {
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        pointCount.textContent = points.length;
+        if (points.length === 0) return;
+        ctx.beginPath();
+        for (let i = 0; i < points.length; i++) {
+            const x = points[i][0] * canvas.width;
+            const y = points[i][1] * canvas.height;
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        if (points.length >= 3) { ctx.closePath(); ctx.fillStyle = "rgba(0, 200, 0, 0.25)"; ctx.fill(); }
+        ctx.strokeStyle = "lime"; ctx.lineWidth = 2; ctx.stroke();
+        for (const point of points) {
+            ctx.beginPath();
+            ctx.arc(point[0] * canvas.width, point[1] * canvas.height, 4, 0, Math.PI * 2);
+            ctx.fillStyle = "red"; ctx.fill();
+        }
+    }
+    function resizeCanvas() {
+        if (!img.naturalWidth || img.clientWidth === 0) return;
+        canvas.width = img.clientWidth; canvas.height = img.clientHeight;
+        canvas.style.width = img.clientWidth + "px"; canvas.style.height = img.clientHeight + "px";
+        drawMask();
+    }
+    img.onload = function() { img.style.display = "block"; maskEmpty.style.display = "none"; resizeCanvas(); };
+    img.onerror = function() { img.style.display = "none"; maskEmpty.style.display = "block"; };
+    if (img.src && img.complete && img.naturalWidth > 0) { img.style.display = "block"; maskEmpty.style.display = "none"; resizeCanvas(); }
+    canvas.addEventListener("click", function(e) {
+        const rect = canvas.getBoundingClientRect();
+        points.push([parseFloat(((e.clientX - rect.left) / rect.width).toFixed(4)), parseFloat(((e.clientY - rect.top) / rect.height).toFixed(4))]);
+        pointsTouched = true; drawMask();
+    });
+    document.getElementById("undoPoint").addEventListener("click", function() { points.pop(); pointsTouched = true; drawMask(); });
+    document.getElementById("clearPoints").addEventListener("click", function() { points = []; pointsTouched = true; drawMask(); });
+    window.addEventListener("resize", resizeCanvas);
+    document.getElementById("cameraForm").addEventListener("submit", function() {
+        if (points.length >= 3) activeMaskInput.value = JSON.stringify(points);
+        else if (pointsTouched) activeMaskInput.value = "[]";
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,51 @@
+﻿{% extends "base.html" %}
+{% block content %}
+<h4>مدیریت کارکنان</h4>
+<div class="card mb-4">
+    <div class="card-header">افزودن کارمند جدید</div>
+    <div class="card-body">
+        <form method="post" action="{{ url_for('main.employee_new') }}" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">کد پرسنلی</label>
+                <input type="text" name="personnel_code" class="form-control" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">نام و نام خانوادگی</label>
+                <input type="text" name="full_name" class="form-control" required>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button class="btn btn-primary w-100">افزودن</button>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead><tr><th>#</th><th>کد پرسنلی</th><th>نام</th><th>تعداد چهره</th><th>وضعیت</th><th>عملیات</th></tr></thead>
+            <tbody>
+                {% for employee in employees %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ employee.personnel_code }}</td>
+                        <td>{{ employee.full_name }}</td>
+                        <td>{{ employee.face_count }}</td>
+                        <td>{{ "فعال" if employee.active else "غیرفعال" }}</td>
+                        <td>
+                            <a class="btn btn-sm btn-outline-primary" href="{{ url_for('main.employee_detail', employee_id=employee.id) }}">جزئیات</a>
+                            <form method="post" action="{{ url_for('main.employee_toggle', employee_id=employee.id) }}" class="d-inline">
+                                <button class="btn btn-sm btn-outline-warning">{{ "غیرفعال" if employee.active else "فعال" }}</button>
+                            </form>
+                            <form method="post" action="{{ url_for('main.employee_delete', employee_id=employee.id) }}" class="d-inline" onsubmit="return confirm('حذف شود');">
+                                <button class="btn btn-sm btn-outline-danger">حذف</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="6" class="text-center text-muted">کارمندی ثبت نشده است.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

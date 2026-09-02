@@ -1,0 +1,54 @@
+﻿{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">مدیریت دوربینها</h4>
+    <a href="{{ url_for('main.camera_new') }}" class="btn btn-sm btn-primary">افزودن دوربین</a>
+</div>
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th><th>نام</th><th>محدوده</th><th>وضعیت</th><th>فعال</th>
+                        <th>فریم</th><th>پردازش</th><th>چهره</th><th>شناسایی</th>
+                        <th>آخرین موفقیت</th><th>آخرین خطا</th><th>عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cam in cameras %}
+                        {% set st = stats_dict.get(cam.id, {}) %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ cam.name }}</td>
+                            <td>{{ cam.zone.name if cam.zone else "-" }}</td>
+                            <td><span class="badge {% if cam.status == 'online' %}bg-success{% elif cam.status == 'error' %}bg-danger{% elif cam.status == 'connecting' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ cam.status_fa }}</span></td>
+                            <td>{{ "فعال" if cam.enabled else "غیرفعال" }}</td>
+                            <td>{{ st.get('frames_read', 0) }}</td>
+                            <td>{{ st.get('processed_frames', 0) }}</td>
+                            <td>{{ st.get('faces', 0) }}</td>
+                            <td>{{ st.get('recognized', 0) }}</td>
+                            <td>{{ st.get('last_success') or '-' }}</td>
+                            <td>{{ st.get('last_error') or '-' }}</td>
+                            <td style="white-space: nowrap;">
+                                <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('main.camera_edit', camera_id=cam.id) }}">ویرایش</a>
+                                <form method="post" action="{{ url_for('main.camera_toggle', camera_id=cam.id) }}" class="d-inline">
+                                    <button class="btn btn-sm btn-outline-warning">{{ "غیرفعال" if cam.enabled else "فعال" }}</button>
+                                </form>
+                                <form method="post" action="{{ url_for('main.camera_restart', camera_id=cam.id) }}" class="d-inline">
+                                    <button class="btn btn-sm btn-outline-primary">اتصال مجدد</button>
+                                </form>
+                                <form method="post" action="{{ url_for('main.camera_delete', camera_id=cam.id) }}" class="d-inline" onsubmit="return confirm('حذف شود');">
+                                    <button class="btn btn-sm btn-outline-danger">حذف</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="12" class="text-center text-muted">دوربینی ثبت نشده است.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

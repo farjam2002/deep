@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block content %}
+<h4 class="mb-3">داشبورد زنده</h4>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        {% if running %}
+            <form method="post" action="{{ url_for('main.processing_stop') }}" class="d-inline">
+                <button class="btn btn-danger">توقف پردازش</button>
+            </form>
+        {% else %}
+            <form method="post" action="{{ url_for('main.processing_start') }}" class="d-inline">
+                <button class="btn btn-success">شروع پردازش</button>
+            </form>
+        {% endif %}
+    </div>
+</div>
+<div class="row mb-4">
+    <div class="col-md-2"><div class="card text-bg-primary"><div class="card-body"><div>دوربین فعال</div><h3 id="stat-active-cameras">{{ stats.active_cameras }}</h3></div></div></div>
+    <div class="col-md-2"><div class="card text-bg-success"><div class="card-body"><div>آنلاین</div><h3 id="stat-online-cameras">{{ stats.online_cameras }}</h3></div></div></div>
+    <div class="col-md-2"><div class="card text-bg-secondary"><div class="card-body"><div>کارکنان</div><h3 id="stat-employees">{{ stats.employees }}</h3></div></div></div>
+    <div class="col-md-2"><div class="card text-bg-warning"><div class="card-body"><div>ناشناس فعال</div><h3 id="stat-unknowns">{{ stats.unknowns }}</h3></div></div></div>
+    <div class="col-md-2"><div class="card text-bg-info"><div class="card-body"><div>جلسات فعال</div><h3 id="stat-active-sessions">{{ stats.active_sessions }}</h3></div></div></div>
+    <div class="col-md-2"><div class="card text-bg-dark"><div class="card-body"><div>رویدادهای امروز</div><h3 id="stat-today-events">{{ stats.today_events }}</h3></div></div></div>
+</div>
+<h5>دوربینها (ویدیو زنده)</h5>
+<div class="row mb-4">
+    {% for cam in cameras %}
+        <div class="col-md-3 mb-3">
+            <div class="card h-100">
+                <img src="{{ url_for('main.live_stream', camera_id=cam.id) }}" class="card-img-top snap" style="background:#000;">
+                <div class="card-body p-2">
+                    <strong>{{ cam.name }}</strong><br>
+                    <span id="cam-status-{{ cam.id }}" class="badge bg-secondary">{{ cam.status_fa }}</span>
+                    <span class="badge bg-info">{{ cam.zone.name if cam.zone else "بدون محدوده" }}</span>
+                    <div class="mt-2">
+                        <form method="post" action="{{ url_for('main.camera_toggle', camera_id=cam.id) }}" class="d-inline">
+                            <button class="btn btn-sm btn-outline-warning">{{ "غیرفعال" if cam.enabled else "فعال" }}</button>
+                        </form>
+                        <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('main.camera_edit', camera_id=cam.id) }}">ویرایش</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let ws = null;
+    function connectWebSocket() {
+        const proto = location.protocol === "https:" ? "wss:" : "ws:";
+        ws = new WebSocket(proto + "//" + location.host + "/ws/dashboard");
+        ws.onmessage = function(event) {
+            try {
+                const data = JSON.parse(event.data);
+                document.getElementById("stat-active-cameras").textContent = data.stats.active_cameras;
+                document.getElementById("stat-online-cameras").textContent = data.stats.online_cameras;
+                document.getElementById("stat-employees").textContent = data.stats.employees;
+                document.getElementById("stat-unknowns").textContent = data.stats.unknowns;
+                document.getElementById("stat-active-sessions").textContent = data.stats.active_sessions;
+                document.getElementById("stat-today-events").textContent = data.stats.today_events;
+            } catch (e) {}
+        };
+        ws.onclose = function() { setTimeout(connectWebSocket, 3000); };
+    }
+    connectWebSocket();
+</script>
+{% endblock %}
